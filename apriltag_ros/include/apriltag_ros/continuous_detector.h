@@ -51,6 +51,7 @@
 #include <nodelet/nodelet.h>
 #include <ros/service_server.h>
 #include <std_srvs/Empty.h>
+#include <std_srvs/SetBool.h>
 
 namespace apriltag_ros
 {
@@ -72,6 +73,7 @@ class ContinuousDetector: public nodelet::Nodelet
   std::mutex detection_mutex_;
   std::shared_ptr<TagDetector> tag_detector_;
   bool draw_tag_detections_image_;
+  bool enable_detector_;
   cv_bridge::CvImagePtr cv_image_;
 
   std::shared_ptr<image_transport::ImageTransport> it_;
@@ -80,7 +82,9 @@ class ContinuousDetector: public nodelet::Nodelet
   ros::Publisher tag_detections_publisher_;
 
   ros::ServiceServer refresh_params_service_;
+  ros::ServiceServer enable_detector_service_;
   bool refreshParamsCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool enableDetectorCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
 };
 
 } // namespace apriltag_ros

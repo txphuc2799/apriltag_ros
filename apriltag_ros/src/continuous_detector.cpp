@@ -48,6 +48,8 @@ void ContinuousDetector::onInit ()
   it_ = std::shared_ptr<image_transport::ImageTransport>(
       new image_transport::ImageTransport(nh));
 
+  enable_detector_ = false;
+
   std::string transport_hint;
   pnh.param<std::string>("transport_hint", transport_hint, "raw");
 
@@ -67,6 +69,10 @@ void ContinuousDetector::onInit ()
   refresh_params_service_ =
       pnh.advertiseService("refresh_tag_params", 
                           &ContinuousDetector::refreshParamsCallback, this);
+
+  enable_detector_service_ =
+      pnh.advertiseService("enable_detector", 
+                          &ContinuousDetector::enableDetectorCallback, this);
 }
 
 void ContinuousDetector::refreshTagParameters()
@@ -86,6 +92,19 @@ bool ContinuousDetector::refreshParamsCallback(std_srvs::Empty::Request& req,
   return true;
 }
 
+bool ContinuousDetector::enableDetectorCallback(std_srvs::SetBool::Request& req,
+                                               std_srvs::SetBool::Response& res)
+{
+  enable_detector_ = req.data;
+  res.success = true;
+  if (enable_detector_) {
+    res.message = "Enable detector success!";
+  } else {
+    res.message = "Disable detector success!";
+  }
+  return true;
+}
+
 void ContinuousDetector::imageCallback (
     const sensor_msgs::ImageConstPtr& image_rect,
     const sensor_msgs::CameraInfoConstPtr& camera_info)
@@ -99,6 +118,10 @@ void ContinuousDetector::imageCallback (
       !tag_detector_->get_publish_tf())
   {
     // ROS_INFO_STREAM("No subscribers and no tf publishing, skip processing.");
+    return;
+  }
+
+  if (!enable_detector_) {
     return;
   }
 

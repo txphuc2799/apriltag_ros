@@ -184,6 +184,7 @@ class TagDetector
   bool remove_duplicates_;
   bool run_quietly_;
   bool publish_tf_;
+  bool z_up_;
   tf::TransformBroadcaster tf_pub_;
 
  public:

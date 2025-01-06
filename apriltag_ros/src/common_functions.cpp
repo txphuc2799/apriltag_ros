@@ -53,7 +53,8 @@ TagDetector::TagDetector(ros::NodeHandle pnh) :
     refine_edges_(getAprilTagOption<int>(pnh, "tag_refine_edges", 1)),
     debug_(getAprilTagOption<int>(pnh, "tag_debug", 0)),
     max_hamming_distance_(getAprilTagOption<int>(pnh, "max_hamming_dist", 2)),
-    publish_tf_(getAprilTagOption<bool>(pnh, "publish_tf", false))
+    publish_tf_(getAprilTagOption<bool>(pnh, "publish_tf", false)),
+    z_up_(getAprilTagOption<bool>(pnh, "z_up", false))
 {
   // Parse standalone tag descriptions specified by user (stored on ROS
   // parameter server)
@@ -513,7 +514,11 @@ Eigen::Isometry3d TagDetector::getRelativeTransform(
   cv::Rodrigues(rvec, R);
 
   // rotation
-  T.linear() << R(0,0), R(0,1), R(0,2), R(1,0), R(1,1), R(1,2), R(2,0), R(2,1), R(2,2);
+  if (z_up_) {
+    T.linear() << R(1,0), R(1,1), R(1,2), R(2,0), R(2,1), R(2,2), R(0,0), R(0,1), R(0,2);
+  } else {
+    T.linear() << R(0,0), R(0,1), R(0,2), R(1,0), R(1,1), R(1,2), R(2,0), R(2,1), R(2,2);
+  }
 
   // translation
   T.translation() = Eigen::Vector3d::Map(reinterpret_cast<const double*>(tvec.data));
@@ -532,9 +537,15 @@ geometry_msgs::PoseWithCovarianceStamped TagDetector::makeTagPose(
   pose.pose.pose.position.x    = transform.translation().x();
   pose.pose.pose.position.y    = transform.translation().y();
   pose.pose.pose.position.z    = transform.translation().z();
-  pose.pose.pose.orientation.x = rot_quaternion.x();
-  pose.pose.pose.orientation.y = rot_quaternion.y();
-  pose.pose.pose.orientation.z = rot_quaternion.z();
+  if (z_up_) {
+    pose.pose.pose.orientation.x = rot_quaternion.z();
+    pose.pose.pose.orientation.y = rot_quaternion.x();
+    pose.pose.pose.orientation.z = rot_quaternion.y();
+  } else {
+    pose.pose.pose.orientation.x = rot_quaternion.x();
+    pose.pose.pose.orientation.y = rot_quaternion.y();
+    pose.pose.pose.orientation.z = rot_quaternion.z();
+  }
   pose.pose.pose.orientation.w = rot_quaternion.w();
   return pose;
 }
